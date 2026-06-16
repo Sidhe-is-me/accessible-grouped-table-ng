@@ -1,0 +1,5 @@
+/* ng-select theme (must be global) */
+@import "@ng-select/ng-select/themes/default.theme.css";
+
+:root { font-family: system-ui, sans-serif; }
+body { margin: 1.5rem; color: #1a1a1a; line-height: 1.45; }

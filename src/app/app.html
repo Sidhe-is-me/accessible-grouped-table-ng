@@ -1,0 +1,96 @@
+<main>
+  <h1>Accessible grouped table — Angular + ng-select</h1>
+  <p class="muted">Real Angular build. Multi-select filters use <code>@ng-select/ng-select</code>; sorting/counts announce via Angular CDK <code>LiveAnnouncer</code>.</p>
+
+  <div class="table-wrap">
+    <table class="grid" aria-label="Projects Table">
+      <caption class="sr-only">Disney projects, grouped parent and child, with column filters</caption>
+      <thead class="dark">
+        <tr>
+          @for (c of cols; track c.id) {
+            <th scope="col" [id]="c.id" [attr.aria-sort]="ariaSort(c.id)">
+              <button type="button" class="sort-btn" (click)="sortBy(c.id)">
+                {{ c.label }} <span class="sort-ind" aria-hidden="true">{{ sortArrow(c.id) }}</span>
+              </button>
+            </th>
+          }
+        </tr>
+        <tr class="filter">
+          <!-- group: expand/collapse all -->
+          <td>
+            <button type="button" class="btn" aria-label="Expand all groups" (click)="expandAll()">Expand all</button>
+            <button type="button" class="btn" aria-label="Collapse all groups" (click)="collapseAll()">Collapse all</button>
+          </td>
+          <!-- division: ng-select multi -->
+          <td>
+            <label class="sr-only" for="f-division">Division filter</label>
+            <ng-select labelForId="f-division" [items]="options('division')" [multiple]="true"
+                       placeholder="Division" [(ngModel)]="fDivision" (ngModelChange)="onFilterChange()"></ng-select>
+          </td>
+          <!-- projectId: text -->
+          <td>
+            <label class="sr-only" for="f-projectId">Project ID filter</label>
+            <input id="f-projectId" type="text" [(ngModel)]="fProjectId" (ngModelChange)="onFilterChange()">
+          </td>
+          <!-- producer: ng-select multi -->
+          <td>
+            <label class="sr-only" for="f-producer">Producer filter</label>
+            <ng-select labelForId="f-producer" [items]="options('producer')" [multiple]="true"
+                       placeholder="Producer" [(ngModel)]="fProducer" (ngModelChange)="onFilterChange()"></ng-select>
+          </td>
+          <!-- status: ng-select multi -->
+          <td>
+            <label class="sr-only" for="f-status">Status filter</label>
+            <ng-select labelForId="f-status" [items]="options('statusName')" [multiple]="true"
+                       placeholder="Status" [(ngModel)]="fStatus" (ngModelChange)="onFilterChange()"></ng-select>
+          </td>
+          <!-- release year: ng-select multi -->
+          <td>
+            <label class="sr-only" for="f-year">Release Year filter</label>
+            <ng-select labelForId="f-year" [items]="options('releaseYear')" [multiple]="true"
+                       placeholder="Year" [(ngModel)]="fYear" (ngModelChange)="onFilterChange()"></ng-select>
+          </td>
+          <!-- title: text -->
+          <td>
+            <label class="sr-only" for="f-title">Title filter</label>
+            <input id="f-title" type="text" [(ngModel)]="fTitle" (ngModelChange)="onFilterChange()">
+          </td>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (rr of renderRows; track rr.row.id) {
+          <tr [class.parent-row]="rr.kind === 'parent'" [class.context-only]="rr.contextOnly"
+              [id]="rr.kind === 'child' ? 'row-' + rr.row.id : null">
+            <td class="group-cell" headers="group">
+              @if (rr.kind === 'parent') {
+                <button type="button" class="btn-link" [attr.aria-expanded]="expanded.has(rr.row.id)"
+                        [attr.aria-controls]="childIds(rr.row)" [attr.aria-label]="parentLabel(rr.row)"
+                        (click)="toggle(rr.row.id)">
+                  <span class="twisty" aria-hidden="true">{{ expanded.has(rr.row.id) ? '▾' : '▸' }}</span>
+                  <span class="group-root">{{ rr.row.id }}</span>
+                </button>
+                @if (rr.contextOnly) {
+                  <span class="badge badge-context">context</span>
+                  <span class="sr-only"> — shown for context; does not match the filter</span>
+                }
+              } @else if (rr.kind === 'child') {
+                <span class="group-child">{{ rr.row.id }}</span>
+                <span class="sr-only"> Child {{ rr.pos }} of {{ rr.setsize }}, under project {{ rr.parentId }}@if (rr.orphan) { — parent {{ rr.parentId }} hidden by current filter }</span>
+                @if (rr.orphan) { <span class="badge badge-orphan">orphan</span> }
+              } @else {
+                <span class="twisty" aria-hidden="true"></span>
+                <span class="group-none">{{ rr.row.id }}</span>
+                <span class="sr-only"> standalone project — not part of a group</span>
+                <span class="badge badge-solo">ungrouped</span>
+              }
+            </td>
+            @for (c of cols.slice(1); track c.id) {
+              <td [attr.headers]="c.id">{{ cellValue(rr.row, c.id) }}</td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</main>

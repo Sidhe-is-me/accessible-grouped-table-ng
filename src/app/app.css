@@ -1,0 +1,32 @@
+h1 { font-size: 1.25rem; }
+.muted { color: #6b7280; font-size: .9rem; }
+
+.table-wrap { border: 1px solid #e5e7eb; overflow: visible; margin-top: 1rem; }
+table.grid { border-collapse: collapse; width: 100%; font-size: .85rem; white-space: nowrap; }
+caption { text-align: left; }
+table.grid th, table.grid td { padding: .4rem .6rem; border-bottom: 1px solid #e5e7eb; text-align: center; }
+thead.dark th { background: #212529; color: #fff; position: sticky; top: 0; z-index: 2; }
+tr.filter td { background: #343a40; padding: .3rem .4rem; vertical-align: top; min-width: 9rem; }
+tbody tr:nth-child(odd) td { background: #f8f9fa; }
+tr.parent-row td { border-top: 2px solid #0d6efd; }
+tr.context-only td { color: #6b7280; font-style: italic; }
+
+.group-cell { text-align: left; min-width: 14rem; }
+.group-root { font-weight: 700; color: #1d4ed8; }
+.group-child { color: #6b7280; padding-left: 1.5rem; }
+.group-none { color: #374151; }
+.twisty { display: inline-block; width: 1.1rem; }
+.badge { font-size: .7rem; font-weight: 600; padding: .05rem .35rem; border-radius: 4px; margin-left: .35rem; }
+.badge-context { background: #fef3c7; color: #92400e; }
+.badge-orphan { background: #e0e7ff; color: #3730a3; }
+.badge-solo { background: #f3f4f6; color: #374151; }
+
+.btn { font: inherit; border: 1px solid #adb5bd; background: #fff; border-radius: 4px; padding: .1rem .4rem; cursor: pointer; margin: 0 .15rem .15rem 0; }
+.btn-link { border: 0; background: none; color: #1d4ed8; cursor: pointer; font: inherit; }
+.sort-btn { font: inherit; font-weight: 600; color: inherit; background: none; border: 0; padding: .1rem .2rem; cursor: pointer; display: inline-flex; align-items: center; gap: .25rem; }
+.sort-btn:focus { outline: 2px solid #fff; outline-offset: 1px; }
+.sort-ind { font-size: .7rem; }
+
+tr.filter input[type=text] { width: 100%; font: inherit; padding: .2rem; box-sizing: border-box; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; }
