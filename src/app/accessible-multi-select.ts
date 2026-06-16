@@ -1,14 +1,17 @@
 import { Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild } from '@angular/core';
+import { CdkListbox, CdkOption } from '@angular/cdk/listbox';
 
 /**
- * Accessible multi-select — a port of the static demo's hand-built listbox.
- * button (aria-haspopup=listbox, aria-expanded, named w/ count) + role=listbox
- * (aria-multiselectable, aria-activedescendant, full keyboard) + removable chips.
- * Replaces ng-select, which shipped with no accessible name / no listbox role.
+ * Accessible multi-select built on @angular/cdk/listbox.
+ * CDK provides the listbox core: role=listbox, aria-multiselectable, keyboard
+ * navigation, aria-activedescendant, and type-ahead — maintained by the Angular team.
+ * This component adds the disclosure trigger (aria-haspopup/expanded + accessible
+ * name with count) and the removable chips around it.
  */
 @Component({
   selector: 'app-multi-select',
   standalone: true,
+  imports: [CdkListbox, CdkOption],
   template: `
 <div class="ms">
   <button #trigger type="button" class="ms-btn" aria-haspopup="listbox"
@@ -17,7 +20,7 @@ import { Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewC
     {{ summary }} <span aria-hidden="true">▾</span>
   </button>
 
-  @if (selected.size) {
+  @if (selected.length) {
     <ul class="chips" [attr.aria-label]="label + ' — selected, removable'">
       @for (o of shownChips; track o) {
         <li><button type="button" class="chip"
@@ -32,12 +35,12 @@ import { Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewC
     </ul>
   }
 
-  <ul #listbox class="ms-listbox" role="listbox" aria-multiselectable="true"
-      [attr.aria-label]="label" [hidden]="!open" tabindex="0"
-      [attr.aria-activedescendant]="activeId" (keydown)="onListKeydown($event)">
-    @for (o of options; track o; let i = $index) {
-      <li [id]="optId(i)" role="option" [attr.aria-selected]="isSelected(o)"
-          [class.active]="i === active" (click)="toggleOption(o); setActive(i)">{{ o }}</li>
+  <ul #listbox [id]="id" class="ms-listbox" [hidden]="!open"
+      cdkListbox cdkListboxMultiple cdkListboxUseActiveDescendant
+      [attr.aria-label]="label" [cdkListboxValue]="selected"
+      (cdkListboxValueChange)="onValueChange($event)" (keydown)="onListKeydown($event)">
+    @for (o of options; track o) {
+      <li [cdkOption]="o" class="ms-option">{{ o }}</li>
     }
   </ul>
 </div>`,
@@ -51,9 +54,9 @@ import { Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewC
 .chip-more { background: #e5e7eb; border-color: #9ca3af; font-weight: 600; }
 .ms-listbox { position: absolute; z-index: 20; left: 0; min-width: 12rem; margin: .15rem 0 0; padding: .2rem 0; list-style: none; background: #fff; color: #1a1a1a; border: 1px solid #6b7280; border-radius: 4px; max-height: 12rem; overflow: auto; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
 .ms-listbox:focus { outline: 2px solid #2563eb; }
-.ms-listbox li { padding: .25rem .8rem .25rem 1.4rem; cursor: pointer; position: relative; }
-.ms-listbox li[aria-selected="true"]::before { content: "✓"; position: absolute; left: .45rem; }
-.ms-listbox li.active { background: #dbeafe; outline: 2px solid #2563eb; outline-offset: -2px; }
+.ms-option { padding: .25rem .8rem .25rem 1.4rem; cursor: pointer; position: relative; }
+.ms-option[aria-selected="true"]::before { content: "✓"; position: absolute; left: .45rem; }
+.ms-option.cdk-option-active, .ms-option:hover { background: #dbeafe; outline: 2px solid #2563eb; outline-offset: -2px; }
 `],
 })
 export class AccessibleMultiSelect {
@@ -63,55 +66,37 @@ export class AccessibleMultiSelect {
   @ViewChild('listbox') listbox?: ElementRef<HTMLElement>;
   @ViewChild('trigger') trigger?: ElementRef<HTMLButtonElement>;
 
-  selected = new Set<string>();
+  selected: string[] = [];
   open = false;
-  active = 0;
   showAll = false;
   readonly MAX = 5;
 
   constructor(private host: ElementRef) {}
 
-  private slug(s: string) { return s.replace(/[^a-zA-Z0-9_-]/g, '-'); }
-  get id() { return 'ms-' + this.slug(this.label); }
-  optId(i: number) { return this.id + '-o' + i; }
-  get activeId() { return this.open ? this.optId(this.active) : null; }
-  get summary() { const n = this.selected.size; return `${this.label}: ${n ? n + ' selected' : 'all'}`; }
-  get triggerLabel() { const n = this.selected.size; return `${this.label} filter, ${n ? n + ' selected' : 'all'}`; }
-  isSelected(o: string) { return this.selected.has(o); }
-  get shownChips() { const v = [...this.selected]; return this.showAll ? v : v.slice(0, this.MAX); }
-  get overflow() { return Math.max(0, this.selected.size - this.MAX); }
+  get id() { return 'ms-' + this.label.replace(/[^a-zA-Z0-9_-]/g, '-'); }
+  get summary() { const n = this.selected.length; return `${this.label}: ${n ? n + ' selected' : 'all'}`; }
+  get triggerLabel() { const n = this.selected.length; return `${this.label} filter, ${n ? n + ' selected' : 'all'}`; }
+  get shownChips() { return this.showAll ? this.selected : this.selected.slice(0, this.MAX); }
+  get overflow() { return Math.max(0, this.selected.length - this.MAX); }
 
   private defer(fn: () => void) { setTimeout(fn, 0); }
 
   toggleOpen() { this.open ? this.close(false) : this.openList(); }
-  openList() {
-    this.open = true;
-    const sel = this.options.findIndex(o => this.selected.has(o));
-    this.active = sel < 0 ? 0 : sel;
-    this.defer(() => this.listbox?.nativeElement.focus());
-  }
+  openList() { this.open = true; this.defer(() => this.listbox?.nativeElement.focus()); }
   close(focusTrigger: boolean) { this.open = false; if (focusTrigger) this.defer(() => this.trigger?.nativeElement.focus()); }
-  setActive(i: number) {
-    this.active = Math.max(0, Math.min(i, this.options.length - 1));
-    this.defer(() => document.getElementById(this.optId(this.active))?.scrollIntoView({ block: 'nearest' }));
-  }
-  toggleOption(o: string) { this.selected.has(o) ? this.selected.delete(o) : this.selected.add(o); this.emit(); }
-  removeChip(o: string) { this.selected.delete(o); this.emit(); this.defer(() => this.trigger?.nativeElement.focus()); }
-  private emit() { this.selectionChange.emit([...this.selected]); }
+
+  onValueChange(e: { value: readonly string[] }) { this.selected = [...e.value]; this.selectionChange.emit(this.selected); }
+  removeChip(o: string) { this.selected = this.selected.filter(x => x !== o); this.selectionChange.emit(this.selected); this.defer(() => this.trigger?.nativeElement.focus()); }
 
   onTriggerKeydown(e: KeyboardEvent) { if (['ArrowDown', 'Enter', ' '].includes(e.key)) { e.preventDefault(); this.openList(); } }
   onListKeydown(e: KeyboardEvent) {
-    switch (e.key) {
-      case 'ArrowDown': e.preventDefault(); this.setActive(this.active + 1); break;
-      case 'ArrowUp': e.preventDefault(); this.setActive(this.active - 1); break;
-      case 'Home': e.preventDefault(); this.setActive(0); break;
-      case 'End': e.preventDefault(); this.setActive(this.options.length - 1); break;
-      case ' ': case 'Enter': e.preventDefault(); this.toggleOption(this.options[this.active]); break;
-      case 'Escape': e.preventDefault(); this.close(true); break;
-      case 'Tab': this.close(false); break;
-    }
+    if (e.key === 'Escape') { e.preventDefault(); this.close(true); }
+    else if (e.key === 'Tab') { this.close(false); }
+    // arrows / Home / End / Space / Enter / type-ahead are handled by cdkListbox
   }
 
   @HostListener('document:click', ['$event'])
   onDocClick(e: MouseEvent) { if (this.open && !this.host.nativeElement.contains(e.target)) this.close(false); }
+  @HostListener('focusout', ['$event'])
+  onFocusOut(e: FocusEvent) { if (this.open && !this.host.nativeElement.contains(e.relatedTarget as Node)) this.close(false); }
 }
