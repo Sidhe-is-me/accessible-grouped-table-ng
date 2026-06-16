@@ -20,6 +20,7 @@ interface RenderRow {
   styleUrl: './app.css',
 })
 export class App {
+  readonly build = 'Build: 2026-06-16 · Angular + CdkListbox · v1';
   cols = [
     { id: 'group', label: 'Group' },
     { id: 'division', label: 'Division' },
