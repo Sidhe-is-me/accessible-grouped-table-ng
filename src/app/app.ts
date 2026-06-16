@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgSelectModule } from '@ng-select/ng-select';
+import { AccessibleMultiSelect } from './accessible-multi-select';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 
 interface Row {
@@ -15,7 +15,7 @@ interface RenderRow {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [FormsModule, NgSelectModule],
+  imports: [FormsModule, AccessibleMultiSelect],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

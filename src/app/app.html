@@ -21,34 +21,30 @@
             <button type="button" class="btn" aria-label="Expand all groups" (click)="expandAll()">Expand all</button>
             <button type="button" class="btn" aria-label="Collapse all groups" (click)="collapseAll()">Collapse all</button>
           </td>
-          <!-- division: ng-select multi -->
+          <!-- division: accessible multi-select (ported from the static demo) -->
           <td>
-            <label class="sr-only" for="f-division">Division filter</label>
-            <ng-select labelForId="f-division" [items]="options('division')" [multiple]="true"
-                       placeholder="Division" [(ngModel)]="fDivision" (ngModelChange)="onFilterChange()"></ng-select>
+            <app-multi-select label="Division" [options]="options('division')"
+                              (selectionChange)="fDivision = $event; onFilterChange()"></app-multi-select>
           </td>
           <!-- projectId: text -->
           <td>
             <label class="sr-only" for="f-projectId">Project ID filter</label>
             <input id="f-projectId" type="text" [(ngModel)]="fProjectId" (ngModelChange)="onFilterChange()">
           </td>
-          <!-- producer: ng-select multi -->
+          <!-- producer: accessible multi-select -->
           <td>
-            <label class="sr-only" for="f-producer">Producer filter</label>
-            <ng-select labelForId="f-producer" [items]="options('producer')" [multiple]="true"
-                       placeholder="Producer" [(ngModel)]="fProducer" (ngModelChange)="onFilterChange()"></ng-select>
+            <app-multi-select label="Producer" [options]="options('producer')"
+                              (selectionChange)="fProducer = $event; onFilterChange()"></app-multi-select>
           </td>
-          <!-- status: ng-select multi -->
+          <!-- status: accessible multi-select -->
           <td>
-            <label class="sr-only" for="f-status">Status filter</label>
-            <ng-select labelForId="f-status" [items]="options('statusName')" [multiple]="true"
-                       placeholder="Status" [(ngModel)]="fStatus" (ngModelChange)="onFilterChange()"></ng-select>
+            <app-multi-select label="Status" [options]="options('statusName')"
+                              (selectionChange)="fStatus = $event; onFilterChange()"></app-multi-select>
           </td>
-          <!-- release year: ng-select multi -->
+          <!-- release year: accessible multi-select -->
           <td>
-            <label class="sr-only" for="f-year">Release Year filter</label>
-            <ng-select labelForId="f-year" [items]="options('releaseYear')" [multiple]="true"
-                       placeholder="Year" [(ngModel)]="fYear" (ngModelChange)="onFilterChange()"></ng-select>
+            <app-multi-select label="Release Year" [options]="options('releaseYear')"
+                              (selectionChange)="fYear = $event; onFilterChange()"></app-multi-select>
           </td>
           <!-- title: text -->
           <td>
