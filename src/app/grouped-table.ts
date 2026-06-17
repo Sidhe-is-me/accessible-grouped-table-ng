@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AccessibleMultiSelect } from './accessible-multi-select';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
@@ -6,6 +6,10 @@ import { LiveAnnouncer } from '@angular/cdk/a11y';
 export interface Row {
   id: string; parent: string | null;
   division: string; producer: string; statusName: string; releaseYear: string; title: string;
+}
+export interface FilterState {
+  division: string[]; producer: string[]; status: string[]; year: string[];
+  projectId: string; title: string; search: string;
 }
 interface RenderRow {
   row: Row; level: number; kind: 'parent' | 'child' | 'solo';
@@ -19,7 +23,7 @@ interface RenderRow {
   template: `
 <div class="table-wrap">
   <table class="grid" [attr.aria-label]="tableLabel">
-    <caption class="sr-only">{{ tableLabel }} — grouped parent and child, with column filters</caption>
+    <caption class="sr-only">{{ tableLabel }} — grouped parent and child</caption>
     <thead class="dark">
       <tr>
         @for (c of cols; track c.id) {
@@ -30,6 +34,7 @@ interface RenderRow {
           </th>
         }
       </tr>
+      @if (showFilterRow) {
       <tr class="filter">
         <td>
           <button type="button" class="btn" aria-label="Expand all groups" (click)="expandAll()">Expand all</button>
@@ -60,6 +65,7 @@ interface RenderRow {
           <input [id]="uid + '-f-title'" type="text" [(ngModel)]="fTitle" (ngModelChange)="onFilterChange()">
         </td>
       </tr>
+      }
     </thead>
 
     <tbody>
@@ -132,11 +138,13 @@ tr.filter input[type=text] { width: 100%; font: inherit; padding: .2rem; box-siz
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; }
 `],
 })
-export class GroupedTableComponent implements OnInit {
+export class GroupedTableComponent implements OnInit, OnChanges {
   @Input() data: Row[] = [];
   @Input() cols: { id: string; label: string }[] = [];
   @Input() orphanMode: 'context' | 'inline' = 'context';
   @Input() tableLabel = 'Projects Table';
+  @Input() showFilterRow = true;
+  @Input() externalFilters: FilterState | null = null;
 
   private static seq = 0;
   readonly uid = 'gt' + (GroupedTableComponent.seq++);
@@ -149,21 +157,35 @@ export class GroupedTableComponent implements OnInit {
 
   constructor(private live: LiveAnnouncer) {}
   ngOnInit() { this.data.forEach(r => { if (this.isParent(r)) this.expanded.add(r.id); }); }
+  ngOnChanges(c: SimpleChanges) { if (c['externalFilters'] && !c['externalFilters'].firstChange) this.onFilterChange(); }
 
   childrenOf(id: string) { return this.data.filter(r => r.parent === id); }
   isParent(r: Row) { return this.childrenOf(r.id).length > 0; }
   options(col: keyof Row) { return [...new Set(this.data.map(r => r[col] as string))].filter(Boolean); }
 
+  private src(): FilterState {
+    return this.externalFilters ?? {
+      division: this.fDivision, producer: this.fProducer, status: this.fStatus, year: this.fYear,
+      projectId: this.fProjectId, title: this.fTitle, search: '',
+    };
+  }
   private anyActive() {
-    return !!(this.fDivision.length || this.fProducer.length || this.fStatus.length || this.fYear.length || this.fProjectId || this.fTitle);
+    const f = this.src();
+    return !!(f.division.length || f.producer.length || f.status.length || f.year.length || f.projectId || f.title || f.search);
   }
   private matches(r: Row): boolean {
-    if (this.fDivision.length && !this.fDivision.includes(r.division)) return false;
-    if (this.fProducer.length && !this.fProducer.includes(r.producer)) return false;
-    if (this.fStatus.length && !this.fStatus.includes(r.statusName)) return false;
-    if (this.fYear.length && !this.fYear.includes(r.releaseYear)) return false;
-    if (this.fProjectId && !r.id.toLowerCase().includes(this.fProjectId.toLowerCase())) return false;
-    if (this.fTitle && !r.title.toLowerCase().includes(this.fTitle.toLowerCase())) return false;
+    const f = this.src();
+    if (f.division.length && !f.division.includes(r.division)) return false;
+    if (f.producer.length && !f.producer.includes(r.producer)) return false;
+    if (f.status.length && !f.status.includes(r.statusName)) return false;
+    if (f.year.length && !f.year.includes(r.releaseYear)) return false;
+    if (f.projectId && !r.id.toLowerCase().includes(f.projectId.toLowerCase())) return false;
+    if (f.title && !r.title.toLowerCase().includes(f.title.toLowerCase())) return false;
+    if (f.search) {
+      const q = f.search.toLowerCase();
+      const hay = [r.id, r.division, r.producer, r.statusName, r.releaseYear, r.title].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     return true;
   }
   private descMatch(r: Row): boolean { return this.childrenOf(r.id).some(c => this.matches(c) || this.descMatch(c)); }
@@ -178,7 +200,6 @@ export class GroupedTableComponent implements OnInit {
 
   get renderRows(): RenderRow[] { return this.orphanMode === 'inline' ? this.renderInline() : this.renderContext(); }
 
-  // current behavior: parent without a match is kept as a dimmed "context" row
   private renderContext(): RenderRow[] {
     const out: RenderRow[] = [];
     const roots = this.sortRows(this.data.filter(r => r.parent === null && this.visible(r)));
@@ -194,7 +215,6 @@ export class GroupedTableComponent implements OnInit {
     return out;
   }
 
-  // option (a): a non-matching parent is DROPPED; its matching children show as orphans that name the missing parent
   private renderInline(): RenderRow[] {
     const out: RenderRow[] = [];
     const active = this.anyActive();

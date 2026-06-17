@@ -1,15 +1,16 @@
 import { Component } from '@angular/core';
-import { GroupedTableComponent, Row } from './grouped-table';
+import { FormsModule } from '@angular/forms';
+import { GroupedTableComponent, Row, FilterState } from './grouped-table';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [GroupedTableComponent],
+  imports: [GroupedTableComponent, FormsModule],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App {
-  readonly build = 'Build: 2026-06-17 · Angular + CdkListbox · v2 — orphan options A/B';
+  readonly build = 'Build: 2026-06-17 · Angular + CdkListbox · v3 — orphan A/B + drawer filter (C)';
   cols = [
     { id: 'group', label: 'Group' },
     { id: 'division', label: 'Division' },
@@ -32,4 +33,22 @@ export class App {
     { id: 'DPLUS-5005', parent: null, division: 'Disney+', producer: 'L. Park', statusName: 'Released', releaseYear: '2024', title: 'Harbor Lights' },
     { id: 'NATGEO-6006', parent: null, division: 'National Geographic', producer: 'R. Singh', statusName: 'In Production', releaseYear: '2026', title: 'Deep Current' },
   ];
+
+  // ---- Option C: left drawer filter ----
+  drawerOpen = true;
+  dFilters: FilterState = { division: [], producer: [], status: [], year: [], projectId: '', title: '', search: '' };
+
+  get divisions() { return [...new Set(this.data.map(r => r.division))]; }
+  get statuses() { return [...new Set(this.data.map(r => r.statusName))]; }
+  get years() { return [...new Set(this.data.map(r => r.releaseYear))].sort(); }
+
+  isChecked(field: 'division' | 'status', v: string) { return this.dFilters[field].includes(v); }
+  toggleCheckbox(field: 'division' | 'status', value: string) {
+    const arr = this.dFilters[field];
+    const next = arr.includes(value) ? arr.filter(x => x !== value) : [...arr, value];
+    this.dFilters = { ...this.dFilters, [field]: next };
+  }
+  setYear(y: string) { this.dFilters = { ...this.dFilters, year: y ? [y] : [] }; }
+  setText(field: 'search' | 'projectId', v: string) { this.dFilters = { ...this.dFilters, [field]: v }; }
+  clearFilters() { this.dFilters = { division: [], producer: [], status: [], year: [], projectId: '', title: '', search: '' }; }
 }

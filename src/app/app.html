@@ -1,21 +1,72 @@
 <main>
   <h1>Accessible grouped table — Angular + CdkListbox</h1>
   <p class="muted" style="font-variant-numeric:tabular-nums;">{{ build }} <span style="color:#6b7280;">— hard-refresh (Cmd/Ctrl+Shift+R) if this looks stale</span></p>
-  <p class="muted">Real Angular build. Multi-select filters use <code>@angular/cdk/listbox</code>; sorting/counts announce via Angular CDK <code>LiveAnnouncer</code>. Two tables below show two ways to handle an <strong>orphaned child</strong> — a child that matches a filter when its parent does not.</p>
+  <p class="muted">Real Angular build. Three tables below: two ways to handle an <strong>orphaned child</strong> (a child that matches a filter when its parent does not), and a third showing the filters in a <strong>left drawer</strong> instead of the in-table row.</p>
 
   <h2>Table 1 — parent kept as a “context” row (current behaviour)</h2>
-  <p class="muted">When a filter matches a child but not its parent, the parent stays visible as a dimmed <em>context</em> row, so the child keeps its place under it. <strong>Try:</strong> open <em>Status</em> → <em>Released</em> — “Aurora Falls (franchise)” stays as a context row above its two released children.</p>
+  <p class="muted">A filter match on a child but not its parent keeps the parent visible as a dimmed <em>context</em> row. <strong>Try:</strong> <em>Status</em> → <em>Released</em>.</p>
   <app-grouped-table [data]="data" [cols]="cols" orphanMode="context" tableLabel="Projects Table — context mode"></app-grouped-table>
 
   <h2 style="margin-top:2rem;">Table 2 — Option A: parent dropped, child shown as an inline orphan</h2>
   <div class="notes">
-    <p><strong>What changes:</strong> when a filter matches a child but not its parent, the parent is <strong>not shown at all</strong>. The child appears on its own and carries the whole story so nothing is lost:</p>
+    <p><strong>What changes:</strong> when a filter matches a child but not its parent, the parent is <strong>not shown</strong>. The child appears on its own and carries the whole story:</p>
     <ol>
-      <li><strong>Names the missing parent</strong> — the row reads (and the screen-reader name says) “<em>child of WDAS-1001</em>”, so its lineage survives even though the parent row is gone.</li>
-      <li><strong>Says the filter caused it</strong> — “<em>parent filtered out</em>” (not just “not shown”), so a screen-reader user gets the same information a sighted user gets from seeing no parent row.</li>
-      <li><strong>Announces it on filter</strong> — the live region says e.g. “Showing 4 of 11 — 2 are child projects whose parent is filtered out.”</li>
+      <li><strong>Names the missing parent</strong> — “<em>child of WDAS-1001</em>”, so its lineage survives.</li>
+      <li><strong>Says the filter caused it</strong> — “<em>parent filtered out</em>” (parity with what a sighted user sees).</li>
+      <li><strong>Announces it on filter</strong> — “Showing 4 of 11 — 2 are child projects whose parent is filtered out.”</li>
     </ol>
-    <p><strong>Try:</strong> open <em>Status</em> → <em>Released</em>. The parent “Aurora Falls (franchise)” (In Production) is gone; “Aurora Falls” and “Aurora Falls II” appear as inline orphans that still name their parent. Compare with Table 1.</p>
+    <p><strong>Try:</strong> <em>Status</em> → <em>Released</em>. Compare with Table 1.</p>
   </div>
   <app-grouped-table [data]="data" [cols]="cols" orphanMode="inline" tableLabel="Projects Table — inline orphan mode"></app-grouped-table>
+
+  <h2 style="margin-top:2rem;">Table 3 — Option C: filters in a left drawer</h2>
+  <div class="notes">
+    <p><strong>What changes:</strong> the in-table filter row is gone — filters move to a left-hand drawer with a <strong>search field</strong>, <strong>checkbox</strong> groups (multi-select), a <strong>radio</strong> group (single-select), and a <strong>text input</strong> (the layout your team is weighing). The table itself is unchanged (accessible expand/collapse + inline orphans). Each control group is a labelled <code>&lt;fieldset&gt;</code>; the drawer toggle uses <code>aria-expanded</code> / <code>aria-controls</code>.</p>
+    <p><strong>Try:</strong> check Status “Released” in the drawer to see the inline orphans, or type in Search.</p>
+  </div>
+  <button type="button" class="drawer-toggle" [attr.aria-expanded]="drawerOpen" aria-controls="filter-drawer" (click)="drawerOpen = !drawerOpen">
+    {{ drawerOpen ? '◀ Hide filters' : 'Show filters ▶' }}
+  </button>
+  <div class="opt3">
+    <aside id="filter-drawer" class="drawer" aria-label="Filters" [hidden]="!drawerOpen">
+      <div class="drawer-head"><strong>Filters</strong> <button type="button" class="linkbtn" (click)="clearFilters()">Clear all</button></div>
+
+      <div class="fld">
+        <label for="d-search">Search</label>
+        <input id="d-search" type="search" [ngModel]="dFilters.search" (ngModelChange)="setText('search', $event)" placeholder="Search all columns">
+      </div>
+
+      <fieldset class="fld">
+        <legend>Division</legend>
+        @for (d of divisions; track d) {
+          <label class="opt"><input type="checkbox" [checked]="isChecked('division', d)" (change)="toggleCheckbox('division', d)"> {{ d }}</label>
+        }
+      </fieldset>
+
+      <fieldset class="fld">
+        <legend>Status</legend>
+        @for (s of statuses; track s) {
+          <label class="opt"><input type="checkbox" [checked]="isChecked('status', s)" (change)="toggleCheckbox('status', s)"> {{ s }}</label>
+        }
+      </fieldset>
+
+      <fieldset class="fld">
+        <legend>Release year</legend>
+        <label class="opt"><input type="radio" name="dyear" [checked]="dFilters.year.length === 0" (change)="setYear('')"> All</label>
+        @for (y of years; track y) {
+          <label class="opt"><input type="radio" name="dyear" [checked]="dFilters.year[0] === y" (change)="setYear(y)"> {{ y }}</label>
+        }
+      </fieldset>
+
+      <div class="fld">
+        <label for="d-pid">Project ID contains</label>
+        <input id="d-pid" type="text" [ngModel]="dFilters.projectId" (ngModelChange)="setText('projectId', $event)">
+      </div>
+    </aside>
+
+    <div class="opt3-table">
+      <app-grouped-table [data]="data" [cols]="cols" orphanMode="inline" [showFilterRow]="false"
+                         [externalFilters]="dFilters" tableLabel="Projects Table — drawer filters"></app-grouped-table>
+    </div>
+  </div>
 </main>
