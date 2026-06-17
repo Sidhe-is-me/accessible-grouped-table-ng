@@ -1,7 +1,31 @@
 <main>
   <h1>Accessible grouped table — Angular + CdkListbox</h1>
   <p class="muted" style="font-variant-numeric:tabular-nums;">{{ build }} <span style="color:#6b7280;">— hard-refresh (Cmd/Ctrl+Shift+R) if this looks stale</span></p>
-  <p class="muted">Real Angular build. Three tables below: two ways to handle an <strong>orphaned child</strong> (a child that matches a filter when its parent does not), and a third showing the filters in a <strong>left drawer</strong> instead of the in-table row.</p>
+  <p class="muted">Real Angular build. Five tables below compare ways to make a grouped parent/child table clear. Start with the plain-English summary, then the tables show each idea.</p>
+
+  <details class="explainer" open>
+    <summary>Plain-English: why the table is confusing — and what makes it make sense</summary>
+    <div class="notes" style="max-width:62rem;">
+      <p><strong>Why it's confusing right now</strong></p>
+      <ol>
+        <li><strong>The “Group” button doesn't sort — it clusters.</strong> It just stacks each child under its parent; afterward the page even tells a screen reader the column is “not sorted,” so nothing seems to happen.</li>
+        <li><strong>Sorting any normal column scatters the children.</strong> A child only sits next to its parent while “Group” is on. Sort by Status, Title, anything else, and children drift away from their parent.</li>
+        <li><strong>A filter can leave a child with no parent on screen — silently.</strong> If a filter matches a child but not its parent, the parent vanishes and nothing says “the parent was filtered out.” You can't tell whose child it is.</li>
+        <li><strong>“P” and “C” tell you nothing.</strong> No project id, no parent name — and because every project has its own unique number (children aren't numbered off the parent), the id can't tell you who's related either.</li>
+      </ol>
+      <p style="color:#52606d; font-size:.82rem; margin:.2rem 0 .6rem;">Under the hood: no “row name” so a screen reader never says which project a cell belongs to; every cell wrongly points at the empty filter box; standalone projects show a blank cell.</p>
+
+      <p><strong>What makes it make sense</strong></p>
+      <ol>
+        <li><strong>Give every row its project id as its “name”</strong> (a row header) — then any cell tells you which project it belongs to.</li>
+        <li><strong>Always name the parent in plain words, and flag when it's gone</strong> — “child of [parent],” and “parent filtered out” when it's not shown. Two clean ways below: an inline note (Table 2) or a dedicated <strong>Relationship column</strong> (Table 4) — the column tested clearest.</li>
+        <li><strong>Say what happened</strong> — announce “Showing 7 of 60” on filter, and show “No projects match” when nothing does.</li>
+        <li><strong>Call “Group” what it is</strong> (grouping, not sorting) and report the honest state.</li>
+        <li><strong>Mark standalone projects</strong> (“standalone — not part of a group”) instead of a blank cell.</li>
+      </ol>
+      <p><strong>Bottom line:</strong> it's not confusing because it's complicated — it's confusing because the <em>relationships and states aren't spelled out.</em> Spell them out and it makes sense. The five tables below show each piece.</p>
+    </div>
+  </details>
 
   <h2>Table 1 — parent kept as a “context” row (current behaviour)</h2>
   <p class="muted">A filter match on a child but not its parent keeps the parent visible as a dimmed <em>context</em> row. <strong>Try:</strong> <em>Status</em> → <em>Released</em>.</p>
