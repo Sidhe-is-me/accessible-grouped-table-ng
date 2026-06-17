@@ -69,4 +69,11 @@
                          [externalFilters]="dFilters" tableLabel="Projects Table — drawer filters"></app-grouped-table>
     </div>
   </div>
+
+  <h2 style="margin-top:2rem;">Table 4 — Option B: dedicated Parent column</h2>
+  <div class="notes">
+    <p><strong>What changes:</strong> instead of an inline marker, every child row has a dedicated <strong>Parent</strong> column that always names its parent — even when the parent is filtered out (shown as “WDAS-1001 — filtered out”). Because it’s a real column, a screen reader reads it as “<em>Parent: WDAS-1001 — filtered out</em>” via the column header, and the association survives any filter or sort. <strong>Tradeoff:</strong> it adds a column to an already-wide table (the concern your team raised).</p>
+    <p><strong>Try:</strong> <em>Status</em> → <em>Released</em>. The parent row is gone; each orphan names its parent in the Parent column.</p>
+  </div>
+  <app-grouped-table [data]="data" [cols]="cols" orphanMode="inline" [parentColumn]="true" tableLabel="Projects Table — Parent column"></app-grouped-table>
 </main>

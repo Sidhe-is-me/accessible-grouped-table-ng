@@ -10,7 +10,7 @@ import { GroupedTableComponent, Row, FilterState } from './grouped-table';
   styleUrl: './app.css',
 })
 export class App {
-  readonly build = 'Build: 2026-06-17 · Angular + CdkListbox · v3 — orphan A/B + drawer filter (C)';
+  readonly build = 'Build: 2026-06-17 · Angular + CdkListbox · v4 — context + options A (inline) / B (Parent col) / C (drawer)';
   cols = [
     { id: 'group', label: 'Group' },
     { id: 'division', label: 'Division' },

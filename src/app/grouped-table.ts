@@ -33,6 +33,7 @@ interface RenderRow {
             </button>
           </th>
         }
+        @if (parentColumn) { <th scope="col" [id]="uid + '-parent'">Parent</th> }
       </tr>
       @if (showFilterRow) {
       <tr class="filter">
@@ -64,6 +65,7 @@ interface RenderRow {
           <label class="sr-only" [for]="uid + '-f-title'">Title filter</label>
           <input [id]="uid + '-f-title'" type="text" [(ngModel)]="fTitle" (ngModelChange)="onFilterChange()">
         </td>
+        @if (parentColumn) { <td></td> }
       </tr>
       }
     </thead>
@@ -86,14 +88,11 @@ interface RenderRow {
               }
             } @else if (rr.kind === 'child') {
               <span class="group-child">{{ rr.row.id }}</span>
-              @if (rr.orphan && orphanMode === 'inline') {
+              @if (!parentColumn && rr.orphan && orphanMode === 'inline') {
                 <span class="orphan-line">↳ child of {{ rr.parentId }} · parent filtered out</span>
-                <span class="sr-only"> Child {{ rr.pos }} of {{ rr.setsize }}, child of project {{ rr.parentId }} ({{ rr.parentTitle }}) — parent filtered out, not shown</span>
-                <span class="badge badge-orphan">orphan</span>
-              } @else {
-                <span class="sr-only"> Child {{ rr.pos }} of {{ rr.setsize }}, under project {{ rr.parentId }}@if (rr.orphan) { — parent {{ rr.parentId }} hidden by current filter }</span>
-                @if (rr.orphan) { <span class="badge badge-orphan">orphan</span> }
               }
+              <span class="sr-only">{{ childSr(rr) }}</span>
+              @if (rr.orphan) { <span class="badge badge-orphan">orphan</span> }
             } @else {
               <span class="twisty" aria-hidden="true"></span>
               <span class="group-none">{{ rr.row.id }}</span>
@@ -104,6 +103,7 @@ interface RenderRow {
           @for (c of cols.slice(1); track c.id) {
             <td [attr.headers]="uid + '-' + c.id">{{ cellValue(rr.row, c.id) }}</td>
           }
+          @if (parentColumn) { <td [attr.headers]="uid + '-parent'" class="parent-cell">{{ parentCellText(rr) }}</td> }
         </tr>
       }
     </tbody>
@@ -125,6 +125,7 @@ tr.context-only td { color: #6b7280; font-style: italic; }
 .group-none { color: #374151; }
 .twisty { display: inline-block; width: 1.1rem; }
 .orphan-line { display: block; padding-left: 1.5rem; font-size: .72rem; color: #3730a3; }
+.parent-cell { text-align: left; color: #52606d; }
 .badge { font-size: .7rem; font-weight: 600; padding: .05rem .35rem; border-radius: 4px; margin-left: .35rem; }
 .badge-context { background: #fef3c7; color: #92400e; }
 .badge-orphan { background: #e0e7ff; color: #3730a3; }
@@ -145,6 +146,7 @@ export class GroupedTableComponent implements OnInit, OnChanges {
   @Input() tableLabel = 'Projects Table';
   @Input() showFilterRow = true;
   @Input() externalFilters: FilterState | null = null;
+  @Input() parentColumn = false;
 
   private static seq = 0;
   readonly uid = 'gt' + (GroupedTableComponent.seq++);
@@ -242,6 +244,19 @@ export class GroupedTableComponent implements OnInit, OnChanges {
     return `Project ${r.id}: parent of ${n} projects, ${this.expanded.has(r.id) ? 'expanded — activate to collapse' : 'collapsed — activate to expand'}`;
   }
   cellValue(r: Row, col: string) { return col === 'group' || col === 'projectId' ? r.id : (r as any)[col]; }
+
+  // group-cell hidden text for a child. With a Parent column present, lineage lives in that column.
+  childSr(rr: RenderRow): string {
+    if (this.parentColumn) return ` Child ${rr.pos} of ${rr.setsize}`;
+    let s = ` Child ${rr.pos} of ${rr.setsize}, under project ${rr.parentId}`;
+    if (rr.orphan) s += this.orphanMode === 'inline' ? ` (${rr.parentTitle}) — parent filtered out, not shown` : ` — parent hidden by current filter`;
+    return s;
+  }
+  // value for the dedicated Parent column (Option B)
+  parentCellText(rr: RenderRow): string {
+    if (rr.kind !== 'child') return '—';
+    return rr.orphan ? `${rr.parentId} — filtered out` : (rr.parentId ?? '');
+  }
 
   toggle(id: string) { this.expanded.has(id) ? this.expanded.delete(id) : this.expanded.add(id); }
   expandAll() { this.data.forEach(r => { if (this.isParent(r)) this.expanded.add(r.id); }); }
