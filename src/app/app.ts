@@ -10,7 +10,7 @@ import { GroupedTableComponent, Row, FilterState } from './grouped-table';
   styleUrl: './app.css',
 })
 export class App {
-  readonly build = 'Build: 2026-06-17 · Angular + CdkListbox · v5 — + Table 5 (current P/C glyph state)';
+  readonly build = 'Build: 2026-06-17 · Angular + CdkListbox · v5.1 — Table 5 drops the parent (lone C orphan)';
   cols = [
     { id: 'group', label: 'Group' },
     { id: 'division', label: 'Division' },

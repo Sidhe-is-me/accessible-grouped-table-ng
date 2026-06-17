@@ -79,7 +79,8 @@
 
   <h2 style="margin-top:2rem;">Table 5 — the current state: Group shows only “P” / “C”</h2>
   <div class="notes">
-    <p><strong>This is what’s shipping today.</strong> The Group column shows just <strong>“P”</strong> for parent and <strong>“C”</strong> for child — no project id, no “child of …”. So you can’t tell <em>which</em> project a row is, or <em>which parent</em> a “C” belongs to — and a screen-reader user simply hears “P” or “C”. Expand/collapse and filtering make it worse (a lone “C” with no parent in view). Compare with Tables 1–4, where the id + “child X of Y, under [parent]” make it clear.</p>
+    <p><strong>This is what’s shipping today.</strong> The Group column shows just <strong>“P”</strong> for parent and <strong>“C”</strong> for child — no project id, no “child of …”. So you can’t tell <em>which</em> project a row is, or <em>which parent</em> a “C” belongs to — and a screen-reader user simply hears “P” or “C”.</p>
+    <p><strong>Try:</strong> filter <em>Status</em> → <em>Released</em>. The parent (“P”) is filtered out and gone, leaving bare <strong>“C”</strong> rows with no parent anywhere in view — you can’t tell whose children they are. Compare with Tables 1–4, where the id + “child X of Y, under [parent]” keep it clear.</p>
   </div>
-  <app-grouped-table [data]="data" [cols]="cols" [groupGlyphOnly]="true" orphanMode="context" tableLabel="Projects Table — current P/C state"></app-grouped-table>
+  <app-grouped-table [data]="data" [cols]="cols" [groupGlyphOnly]="true" orphanMode="inline" tableLabel="Projects Table — current P/C state"></app-grouped-table>
 </main>
