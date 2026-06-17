@@ -23,7 +23,7 @@ interface RenderRow {
   template: `
 <div class="table-wrap">
   <table class="grid" [attr.aria-label]="tableLabel">
-    <caption class="sr-only">{{ tableLabel }} — grouped parent and child</caption>
+    <caption>{{ tableLabel }} — {{ data.length }} projects · {{ capCounts.parents }} groups · {{ capCounts.standalone }} standalone. Parent rows expand to show their children.</caption>
     <thead class="dark">
       <tr>
         @if (parentColumn) { <th scope="col" [id]="uid + '-parent'">{{ parentColLabel }}</th> }
@@ -74,8 +74,8 @@ interface RenderRow {
       @for (rr of renderRows; track rr.row.id) {
         <tr [class.parent-row]="rr.kind === 'parent'" [class.context-only]="rr.contextOnly"
             [id]="rr.kind === 'child' ? rowId(rr.row) : null">
-          @if (parentColumn) { <td [attr.headers]="uid + '-parent'" class="parent-cell">{{ parentCellText(rr) }}</td> }
-          <td class="group-cell" [attr.headers]="uid + '-group'">
+          @if (parentColumn) { <td [attr.headers]="uid + '-parent ' + rowHdrId(rr.row)" class="parent-cell">{{ parentCellText(rr) }}</td> }
+          <td class="group-cell" [attr.headers]="uid + '-group ' + rowHdrId(rr.row)">
             @if (groupGlyphOnly) {
               @if (rr.kind === 'parent') {
                 <button type="button" class="btn-link" [attr.aria-expanded]="expanded.has(rr.row.id)" [attr.aria-controls]="childIds(rr.row)" (click)="toggle(rr.row.id)">
@@ -112,9 +112,16 @@ interface RenderRow {
             }
           </td>
           @for (c of cols.slice(1); track c.id) {
-            <td [attr.headers]="uid + '-' + c.id">{{ cellValue(rr.row, c.id) }}</td>
+            @if (c.id === 'projectId') {
+              <th scope="row" class="rowhdr" [id]="rowHdrId(rr.row)" [headers]="uid + '-' + c.id">{{ cellValue(rr.row, c.id) }}</th>
+            } @else {
+              <td [attr.headers]="uid + '-' + c.id + ' ' + rowHdrId(rr.row)">{{ cellValue(rr.row, c.id) }}</td>
+            }
           }
         </tr>
+      }
+      @if (renderRows.length === 0) {
+        <tr><td class="empty" [attr.colspan]="cols.length + (parentColumn ? 1 : 0)">No projects match these filters. Clear or change a filter to see results.</td></tr>
       }
     </tbody>
   </table>
@@ -122,11 +129,13 @@ interface RenderRow {
   styles: [`
 .table-wrap { border: 1px solid #e5e7eb; overflow: visible; margin-top: .5rem; }
 table.grid { border-collapse: collapse; width: 100%; font-size: .85rem; white-space: nowrap; }
-caption { text-align: left; }
+caption { text-align: left; font-size: .8rem; color: #52606d; padding: .35rem .2rem; }
+.rowhdr { font-weight: 400; }
+.empty { text-align: center; color: #6b7280; font-style: italic; padding: 1rem; }
 table.grid th, table.grid td { padding: .4rem .6rem; border-bottom: 1px solid #e5e7eb; text-align: center; }
 thead.dark th { background: #212529; color: #fff; position: sticky; top: 0; z-index: 2; }
 tr.filter td { background: #343a40; padding: .3rem .4rem; vertical-align: top; min-width: 9rem; }
-tbody tr:nth-child(odd) td { background: #f8f9fa; }
+tbody tr:nth-child(odd) td, tbody tr:nth-child(odd) th.rowhdr { background: #f8f9fa; }
 tr.parent-row td { border-top: 2px solid #0d6efd; }
 tr.context-only td { color: #6b7280; font-style: italic; }
 .group-cell { text-align: left; min-width: 14rem; }
@@ -250,6 +259,12 @@ export class GroupedTableComponent implements OnInit, OnChanges {
   }
 
   rowId(r: Row) { return this.uid + '-row-' + r.id; }
+  rowHdrId(r: Row) { return this.uid + '-rh-' + r.id; }
+  get capCounts() {
+    const parents = this.data.filter(r => this.isParent(r)).length;
+    const standalone = this.data.filter(r => r.parent === null && !this.isParent(r)).length;
+    return { parents, standalone };
+  }
   childIds(r: Row) { return this.childrenOf(r.id).map(c => this.rowId(c)).join(' '); }
   parentLabel(r: Row) {
     const n = this.childrenOf(r.id).length;
@@ -287,7 +302,9 @@ export class GroupedTableComponent implements OnInit, OnChanges {
   onFilterChange() {
     const rows = this.renderRows;
     const orphans = rows.filter(r => r.orphan).length;
-    let msg = this.anyActive() ? `Showing ${rows.length} of ${this.data.length} projects` : `${this.data.length} projects shown`;
+    let msg: string;
+    if (this.anyActive() && rows.length === 0) msg = 'No projects match these filters';
+    else msg = this.anyActive() ? `Showing ${rows.length} of ${this.data.length} projects` : `${this.data.length} projects shown`;
     if (this.orphanMode === 'inline' && orphans) msg += ` — ${orphans} ${orphans === 1 ? 'is a child project whose' : 'are child projects whose'} parent is filtered out`;
     this.live.announce(msg);
   }
