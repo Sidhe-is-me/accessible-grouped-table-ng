@@ -70,10 +70,16 @@
     </div>
   </div>
 
-  <h2 style="margin-top:2rem;">Table 4 — Option B: dedicated Parent column</h2>
+  <h2 style="margin-top:2rem;">Table 4 — Option B: dedicated Relationship column</h2>
   <div class="notes">
-    <p><strong>What changes:</strong> instead of an inline marker, every child row has a dedicated <strong>Parent</strong> column that always names its parent — even when the parent is filtered out (shown as “WDAS-1001 — filtered out”). Because it’s a real column, a screen reader reads it as “<em>Parent: WDAS-1001 — filtered out</em>” via the column header, and the association survives any filter or sort. <strong>Tradeoff:</strong> it adds a column to an already-wide table (the concern your team raised).</p>
+    <p><strong>What changes:</strong> instead of an inline marker, every child row has a dedicated <strong>Relationship</strong> column (first column) that always names its parent — even when the parent is filtered out (shown as “WDAS-1001 — filtered out”). Because it’s a real column, a screen reader reads it as “<em>Relationship: WDAS-1001 — filtered out</em>” via the column header, and the association survives any filter or sort. <strong>Tradeoff:</strong> it adds a column to an already-wide table (the concern your team raised).</p>
     <p><strong>Try:</strong> <em>Status</em> → <em>Released</em>. The parent row is gone; each orphan names its parent in the Parent column.</p>
   </div>
   <app-grouped-table [data]="data" [cols]="cols" orphanMode="inline" [parentColumn]="true" tableLabel="Projects Table — Parent column"></app-grouped-table>
+
+  <h2 style="margin-top:2rem;">Table 5 — the current state: Group shows only “P” / “C”</h2>
+  <div class="notes">
+    <p><strong>This is what’s shipping today.</strong> The Group column shows just <strong>“P”</strong> for parent and <strong>“C”</strong> for child — no project id, no “child of …”. So you can’t tell <em>which</em> project a row is, or <em>which parent</em> a “C” belongs to — and a screen-reader user simply hears “P” or “C”. Expand/collapse and filtering make it worse (a lone “C” with no parent in view). Compare with Tables 1–4, where the id + “child X of Y, under [parent]” make it clear.</p>
+  </div>
+  <app-grouped-table [data]="data" [cols]="cols" [groupGlyphOnly]="true" orphanMode="context" tableLabel="Projects Table — current P/C state"></app-grouped-table>
 </main>

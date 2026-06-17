@@ -26,7 +26,7 @@ interface RenderRow {
     <caption class="sr-only">{{ tableLabel }} — grouped parent and child</caption>
     <thead class="dark">
       <tr>
-        @if (parentColumn) { <th scope="col" [id]="uid + '-parent'">Parent</th> }
+        @if (parentColumn) { <th scope="col" [id]="uid + '-parent'">{{ parentColLabel }}</th> }
         @for (c of cols; track c.id) {
           <th scope="col" [id]="uid + '-' + c.id" [attr.aria-sort]="ariaSort(c.id)">
             <button type="button" class="sort-btn" (click)="sortBy(c.id)">
@@ -76,6 +76,15 @@ interface RenderRow {
             [id]="rr.kind === 'child' ? rowId(rr.row) : null">
           @if (parentColumn) { <td [attr.headers]="uid + '-parent'" class="parent-cell">{{ parentCellText(rr) }}</td> }
           <td class="group-cell" [attr.headers]="uid + '-group'">
+            @if (groupGlyphOnly) {
+              @if (rr.kind === 'parent') {
+                <button type="button" class="btn-link" [attr.aria-expanded]="expanded.has(rr.row.id)" [attr.aria-controls]="childIds(rr.row)" (click)="toggle(rr.row.id)">
+                  <span class="twisty" aria-hidden="true">{{ expanded.has(rr.row.id) ? '▾' : '▸' }}</span><span class="group-root">P</span>
+                </button>
+              } @else if (rr.kind === 'child') {
+                <span class="group-child">C</span>
+              }
+            } @else {
             @if (rr.kind === 'parent') {
               <button type="button" class="btn-link" [attr.aria-expanded]="expanded.has(rr.row.id)"
                       [attr.aria-controls]="childIds(rr.row)" [attr.aria-label]="parentLabel(rr.row)"
@@ -99,6 +108,7 @@ interface RenderRow {
               <span class="group-none">{{ rr.row.id }}</span>
               <span class="sr-only"> standalone project — not part of a group</span>
               <span class="badge badge-solo">ungrouped</span>
+            }
             }
           </td>
           @for (c of cols.slice(1); track c.id) {
@@ -147,6 +157,8 @@ export class GroupedTableComponent implements OnInit, OnChanges {
   @Input() showFilterRow = true;
   @Input() externalFilters: FilterState | null = null;
   @Input() parentColumn = false;
+  @Input() groupGlyphOnly = false; // "current state": Group column shows only P / C, no id (deliberately confusing)
+  @Input() parentColLabel = 'Relationship';
 
   private static seq = 0;
   readonly uid = 'gt' + (GroupedTableComponent.seq++);
