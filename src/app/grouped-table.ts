@@ -26,6 +26,7 @@ interface RenderRow {
     <caption class="sr-only">{{ tableLabel }} — grouped parent and child</caption>
     <thead class="dark">
       <tr>
+        @if (parentColumn) { <th scope="col" [id]="uid + '-parent'">Parent</th> }
         @for (c of cols; track c.id) {
           <th scope="col" [id]="uid + '-' + c.id" [attr.aria-sort]="ariaSort(c.id)">
             <button type="button" class="sort-btn" (click)="sortBy(c.id)">
@@ -33,10 +34,10 @@ interface RenderRow {
             </button>
           </th>
         }
-        @if (parentColumn) { <th scope="col" [id]="uid + '-parent'">Parent</th> }
       </tr>
       @if (showFilterRow) {
       <tr class="filter">
+        @if (parentColumn) { <td></td> }
         <td>
           <button type="button" class="btn" aria-label="Expand all groups" (click)="expandAll()">Expand all</button>
           <button type="button" class="btn" aria-label="Collapse all groups" (click)="collapseAll()">Collapse all</button>
@@ -65,7 +66,6 @@ interface RenderRow {
           <label class="sr-only" [for]="uid + '-f-title'">Title filter</label>
           <input [id]="uid + '-f-title'" type="text" [(ngModel)]="fTitle" (ngModelChange)="onFilterChange()">
         </td>
-        @if (parentColumn) { <td></td> }
       </tr>
       }
     </thead>
@@ -74,6 +74,7 @@ interface RenderRow {
       @for (rr of renderRows; track rr.row.id) {
         <tr [class.parent-row]="rr.kind === 'parent'" [class.context-only]="rr.contextOnly"
             [id]="rr.kind === 'child' ? rowId(rr.row) : null">
+          @if (parentColumn) { <td [attr.headers]="uid + '-parent'" class="parent-cell">{{ parentCellText(rr) }}</td> }
           <td class="group-cell" [attr.headers]="uid + '-group'">
             @if (rr.kind === 'parent') {
               <button type="button" class="btn-link" [attr.aria-expanded]="expanded.has(rr.row.id)"
@@ -103,7 +104,6 @@ interface RenderRow {
           @for (c of cols.slice(1); track c.id) {
             <td [attr.headers]="uid + '-' + c.id">{{ cellValue(rr.row, c.id) }}</td>
           }
-          @if (parentColumn) { <td [attr.headers]="uid + '-parent'" class="parent-cell">{{ parentCellText(rr) }}</td> }
         </tr>
       }
     </tbody>
