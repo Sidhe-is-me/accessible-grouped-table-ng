@@ -71,9 +71,13 @@ export class AccessibleMultiSelect {
   showAll = false;
   readonly MAX = 5;
 
+  // unique per instance so two tables on one page don't collide on the listbox id
+  private static seq = 0;
+  private readonly uid = 'ms' + (AccessibleMultiSelect.seq++);
+
   constructor(private host: ElementRef) {}
 
-  get id() { return 'ms-' + this.label.replace(/[^a-zA-Z0-9_-]/g, '-'); }
+  get id() { return this.uid + '-' + this.label.replace(/[^a-zA-Z0-9_-]/g, '-'); }
   get summary() { const n = this.selected.length; return `${this.label}: ${n ? n + ' selected' : 'all'}`; }
   get triggerLabel() { const n = this.selected.length; return `${this.label} filter, ${n ? n + ' selected' : 'all'}`; }
   get shownChips() { return this.showAll ? this.selected : this.selected.slice(0, this.MAX); }

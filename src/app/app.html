@@ -1,93 +1,21 @@
 <main>
-  <h1>Accessible grouped table — Angular + ng-select</h1>
-  <p class="muted" style="font-variant-numeric:tabular-nums;">{{ build }} <span style="color:#9ca3af;">— hard-refresh (Cmd/Ctrl+Shift+R) if this looks stale</span></p>
-  <p class="muted">Real Angular build. Multi-select filters use <code>@angular/cdk/listbox</code>; sorting/counts announce via Angular CDK <code>LiveAnnouncer</code>.</p>
+  <h1>Accessible grouped table — Angular + CdkListbox</h1>
+  <p class="muted" style="font-variant-numeric:tabular-nums;">{{ build }} <span style="color:#6b7280;">— hard-refresh (Cmd/Ctrl+Shift+R) if this looks stale</span></p>
+  <p class="muted">Real Angular build. Multi-select filters use <code>@angular/cdk/listbox</code>; sorting/counts announce via Angular CDK <code>LiveAnnouncer</code>. Two tables below show two ways to handle an <strong>orphaned child</strong> — a child that matches a filter when its parent does not.</p>
 
-  <div class="table-wrap">
-    <table class="grid" aria-label="Projects Table">
-      <caption class="sr-only">Disney projects, grouped parent and child, with column filters</caption>
-      <thead class="dark">
-        <tr>
-          @for (c of cols; track c.id) {
-            <th scope="col" [id]="c.id" [attr.aria-sort]="ariaSort(c.id)">
-              <button type="button" class="sort-btn" (click)="sortBy(c.id)">
-                {{ c.label }} <span class="sort-ind" aria-hidden="true">{{ sortArrow(c.id) }}</span>
-              </button>
-            </th>
-          }
-        </tr>
-        <tr class="filter">
-          <!-- group: expand/collapse all -->
-          <td>
-            <button type="button" class="btn" aria-label="Expand all groups" (click)="expandAll()">Expand all</button>
-            <button type="button" class="btn" aria-label="Collapse all groups" (click)="collapseAll()">Collapse all</button>
-          </td>
-          <!-- division: accessible multi-select (ported from the static demo) -->
-          <td>
-            <app-multi-select label="Division" [options]="options('division')"
-                              (selectionChange)="fDivision = $event; onFilterChange()"></app-multi-select>
-          </td>
-          <!-- projectId: text -->
-          <td>
-            <label class="sr-only" for="f-projectId">Project ID filter</label>
-            <input id="f-projectId" type="text" [(ngModel)]="fProjectId" (ngModelChange)="onFilterChange()">
-          </td>
-          <!-- producer: accessible multi-select -->
-          <td>
-            <app-multi-select label="Producer" [options]="options('producer')"
-                              (selectionChange)="fProducer = $event; onFilterChange()"></app-multi-select>
-          </td>
-          <!-- status: accessible multi-select -->
-          <td>
-            <app-multi-select label="Status" [options]="options('statusName')"
-                              (selectionChange)="fStatus = $event; onFilterChange()"></app-multi-select>
-          </td>
-          <!-- release year: accessible multi-select -->
-          <td>
-            <app-multi-select label="Release Year" [options]="options('releaseYear')"
-                              (selectionChange)="fYear = $event; onFilterChange()"></app-multi-select>
-          </td>
-          <!-- title: text -->
-          <td>
-            <label class="sr-only" for="f-title">Title filter</label>
-            <input id="f-title" type="text" [(ngModel)]="fTitle" (ngModelChange)="onFilterChange()">
-          </td>
-        </tr>
-      </thead>
+  <h2>Table 1 — parent kept as a “context” row (current behaviour)</h2>
+  <p class="muted">When a filter matches a child but not its parent, the parent stays visible as a dimmed <em>context</em> row, so the child keeps its place under it. <strong>Try:</strong> open <em>Status</em> → <em>Released</em> — “Aurora Falls (franchise)” stays as a context row above its two released children.</p>
+  <app-grouped-table [data]="data" [cols]="cols" orphanMode="context" tableLabel="Projects Table — context mode"></app-grouped-table>
 
-      <tbody>
-        @for (rr of renderRows; track rr.row.id) {
-          <tr [class.parent-row]="rr.kind === 'parent'" [class.context-only]="rr.contextOnly"
-              [id]="rr.kind === 'child' ? 'row-' + rr.row.id : null">
-            <td class="group-cell" headers="group">
-              @if (rr.kind === 'parent') {
-                <button type="button" class="btn-link" [attr.aria-expanded]="expanded.has(rr.row.id)"
-                        [attr.aria-controls]="childIds(rr.row)" [attr.aria-label]="parentLabel(rr.row)"
-                        (click)="toggle(rr.row.id)">
-                  <span class="twisty" aria-hidden="true">{{ expanded.has(rr.row.id) ? '▾' : '▸' }}</span>
-                  <span class="group-root">{{ rr.row.id }}</span>
-                </button>
-                @if (rr.contextOnly) {
-                  <span class="badge badge-context">context</span>
-                  <span class="sr-only"> — shown for context; does not match the filter</span>
-                }
-              } @else if (rr.kind === 'child') {
-                <span class="group-child">{{ rr.row.id }}</span>
-                <span class="sr-only"> Child {{ rr.pos }} of {{ rr.setsize }}, under project {{ rr.parentId }}@if (rr.orphan) { — parent {{ rr.parentId }} hidden by current filter }</span>
-                @if (rr.orphan) { <span class="badge badge-orphan">orphan</span> }
-              } @else {
-                <span class="twisty" aria-hidden="true"></span>
-                <span class="group-none">{{ rr.row.id }}</span>
-                <span class="sr-only"> standalone project — not part of a group</span>
-                <span class="badge badge-solo">ungrouped</span>
-              }
-            </td>
-            @for (c of cols.slice(1); track c.id) {
-              <td [attr.headers]="c.id">{{ cellValue(rr.row, c.id) }}</td>
-            }
-          </tr>
-        }
-      </tbody>
-    </table>
+  <h2 style="margin-top:2rem;">Table 2 — Option A: parent dropped, child shown as an inline orphan</h2>
+  <div class="notes">
+    <p><strong>What changes:</strong> when a filter matches a child but not its parent, the parent is <strong>not shown at all</strong>. The child appears on its own and carries the whole story so nothing is lost:</p>
+    <ol>
+      <li><strong>Names the missing parent</strong> — the row reads (and the screen-reader name says) “<em>child of WDAS-1001</em>”, so its lineage survives even though the parent row is gone.</li>
+      <li><strong>Says the filter caused it</strong> — “<em>parent filtered out</em>” (not just “not shown”), so a screen-reader user gets the same information a sighted user gets from seeing no parent row.</li>
+      <li><strong>Announces it on filter</strong> — the live region says e.g. “Showing 4 of 11 — 2 are child projects whose parent is filtered out.”</li>
+    </ol>
+    <p><strong>Try:</strong> open <em>Status</em> → <em>Released</em>. The parent “Aurora Falls (franchise)” (In Production) is gone; “Aurora Falls” and “Aurora Falls II” appear as inline orphans that still name their parent. Compare with Table 1.</p>
   </div>
+  <app-grouped-table [data]="data" [cols]="cols" orphanMode="inline" tableLabel="Projects Table — inline orphan mode"></app-grouped-table>
 </main>
