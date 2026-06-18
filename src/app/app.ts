@@ -10,7 +10,7 @@ import { GroupedTableComponent, Row, FilterState } from './grouped-table';
   styleUrl: './app.css',
 })
 export class App {
-  readonly build = 'Build: 2026-06-17 · Angular + CdkListbox · v6.1 — plain-English explainer added at top';
+  readonly build = 'Build: 2026-06-18 · Angular + CdkListbox · v6.2 — Table 6: live 3-way strategy switch + annotated comparison matrix';
   cols = [
     { id: 'group', label: 'Group' },
     { id: 'division', label: 'Division' },
@@ -51,4 +51,17 @@ export class App {
   setYear(y: string) { this.dFilters = { ...this.dFilters, year: y ? [y] : [] }; }
   setText(field: 'search' | 'projectId', v: string) { this.dFilters = { ...this.dFilters, [field]: v }; }
   clearFilters() { this.dFilters = { division: [], producer: [], status: [], year: [], projectId: '', title: '', search: '' }; }
+
+  // ---- Table 6: live 3-way strategy switch ----
+  strategy: 'current' | 'A' | 'B' = 'B';
+  get stratTitle() {
+    return { current: 'Current behaviour (today)', A: 'Option A — tree-preserving', B: 'Option B — strict' }[this.strategy];
+  }
+  get stratNote() {
+    return {
+      current: 'A child can appear with no parent anywhere in view — and only a bare “C” to identify it. A screen reader hears just “C”: no project id, no parent name, and no note that the parent was filtered out. This is the confusion to fix.',
+      A: 'The non-matching parent “Aurora Falls (franchise)” stays as a dimmed context row, marked “context — does not match the filter,” with its matching children under it. The hierarchy stays navigable in one result set; the tradeoff is that a row which doesn’t match the filter is still on screen.',
+      B: 'Only matches are shown — the parent is dropped. Each orphaned child names its missing parent (“child of WDAS-1001”) and says “parent filtered out,” and the result count is announced. Meets the “filters show only matches” expectation; needs the extra messaging so the orphan isn’t confusing.',
+    }[this.strategy];
+  }
 }

@@ -1,7 +1,7 @@
 <main>
   <h1>Accessible grouped table — Angular + CdkListbox</h1>
   <p class="muted" style="font-variant-numeric:tabular-nums;">{{ build }} <span style="color:#6b7280;">— hard-refresh (Cmd/Ctrl+Shift+R) if this looks stale</span></p>
-  <p class="muted">Real Angular build. Five tables below compare ways to make a grouped parent/child table clear. Start with the plain-English summary, then the tables show each idea.</p>
+  <p class="muted">Real Angular build. Six tables below compare ways to make a grouped parent/child table clear. Start with the plain-English summary, then the tables show each idea. Table 6 lets you flip between all three behaviours live, with an annotated comparison chart.</p>
 
   <details class="explainer" open>
     <summary>Plain-English: why the table is confusing — and what makes it make sense</summary>
@@ -107,4 +107,95 @@
     <p><strong>Try:</strong> filter <em>Status</em> → <em>Released</em>. The parent (“P”) is filtered out and gone, leaving bare <strong>“C”</strong> rows with no parent anywhere in view — you can’t tell whose children they are. Compare with Tables 1–4, where the id + “child X of Y, under [parent]” keep it clear.</p>
   </div>
   <app-grouped-table [data]="data" [cols]="cols" [groupGlyphOnly]="true" orphanMode="inline" tableLabel="Projects Table — current P/C state"></app-grouped-table>
+
+  <h2 style="margin-top:2.5rem;">Table 6 — try all three live: Current vs Option A vs Option B</h2>
+  <div class="notes">
+    <p><strong>What this is:</strong> the same Disney project data with one switch to flip between today’s behaviour and the two fixes. Pick a strategy, then <strong>filter <em>Status</em> → <em>Released</em></strong> — the parent “Aurora Falls (franchise)” is <em>In Production</em>, so it drops out — and watch how each option handles its orphaned children. The annotated chart underneath lays out every scenario side by side.</p>
+  </div>
+
+  <fieldset class="strategy">
+    <legend>Filtering strategy</legend>
+    <label class="opt"><input type="radio" name="strat" value="current" [checked]="strategy==='current'" (change)="strategy='current'"> Current behaviour (today)</label>
+    <label class="opt"><input type="radio" name="strat" value="A" [checked]="strategy==='A'" (change)="strategy='A'"> Option A — tree-preserving (keep parent as context)</label>
+    <label class="opt"><input type="radio" name="strat" value="B" [checked]="strategy==='B'" (change)="strategy='B'"> Option B — strict (drop parent, mark orphan)</label>
+  </fieldset>
+
+  <p class="callout" role="note" aria-live="polite"><strong>{{ stratTitle }}:</strong> {{ stratNote }}</p>
+
+  @if (strategy === 'current') {
+    <app-grouped-table [data]="data" [cols]="cols" [groupGlyphOnly]="true" orphanMode="inline" tableLabel="Table 6 — current behaviour"></app-grouped-table>
+  } @else if (strategy === 'A') {
+    <app-grouped-table [data]="data" [cols]="cols" orphanMode="context" tableLabel="Table 6 — Option A, tree-preserving"></app-grouped-table>
+  } @else {
+    <app-grouped-table [data]="data" [cols]="cols" orphanMode="inline" tableLabel="Table 6 — Option B, strict"></app-grouped-table>
+  }
+
+  <h3 style="margin-top:1.75rem;">Annotated comparison — every scenario, side by side</h3>
+  <p class="muted" style="max-width:60rem;">Native accessible table: row + column headers (<code>scope</code>), descriptive caption. Examples use the Disney data above. “SR” = what a screen-reader user hears; deliver these as either the row’s <strong>accessible name</strong> (read on focus) or a <strong>polite live region</strong> (announced once on change) — noted per row.</p>
+  <div class="matrix-wrap">
+  <table class="matrix">
+    <caption>Current behaviour vs Option A (tree-preserving) vs Option B (strict) for accessible parent/child project filtering. Disney sample data.</caption>
+    <thead>
+      <tr>
+        <th scope="col">Scenario</th>
+        <th scope="col">Current behaviour (today)</th>
+        <th scope="col">Option A — tree-preserving (keep parent as context)</th>
+        <th scope="col">Option B — strict (matches only, mark orphans)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">Child matches the filter but its parent does not<br><span class="eg">e.g. Status → Released: “Aurora Falls II” matches; parent “Aurora Falls (franchise)” (In Production) does not</span></th>
+        <td>Child appears with no parent on screen (“parentless child”). A screen reader may hear “child of WDAS-1001,” but WDAS-1001 isn’t in the results. <em>No signal that the parent was filtered out.</em></td>
+        <td>Parent “Aurora Falls (franchise)” is auto-included as a dimmed <strong>context row</strong>, labelled “context — does not match the filter,” with the matching child shown under it (expanded/expandable). <span class="del">SR (accessible name):</span> “Parent project, context only. Does not match current filters.”</td>
+        <td>Only the child row shows. <span class="del">SR (accessible name):</span> “Child of WDAS-1001 — parent filtered out, not shown.” Offer an action: <strong>“Show parent”</strong> / “Clear filters to show parent.”</td>
+      </tr>
+      <tr>
+        <th scope="row">Parent matches the filter but its children do not<br><span class="eg">e.g. Status → In Production: “Sentinels (initiative)” matches; children Rising / Eclipse do not</span></th>
+        <td>Parent row appears but looks childless — expanding reveals none, with no explanation.</td>
+        <td>Parent announces “Has 2 child projects; showing 0 due to filters.” Optionally a toggle “Include children of matching parents.”</td>
+        <td>Same: parent announces “Has 2 child projects; showing 0 due to filters.” Expansion disabled or shows an explained empty state.</td>
+      </tr>
+      <tr>
+        <th scope="row">Standalone project — no parent, no children<br><span class="eg">e.g. “Tidepool” (PIXAR-3003)</span></th>
+        <td>Shows as a normal row with a blank Group cell — no “standalone” messaging.</td>
+        <td colspan="2"><span class="del">SR:</span> “Standalone project — not part of a group. No parent, no child projects.” (Both options behave the same here.)</td>
+      </tr>
+      <tr>
+        <th scope="row">Expand / collapse while a filter is active</th>
+        <td>The expand control still exists but may reveal no rows; the user can’t tell why.</td>
+        <td>Count-aware: “Expand child projects (showing 1 of 3 due to filters).” If 0, disable expand or announce “No child projects shown due to filters.”</td>
+        <td>Same count-aware control. If children exist but none match: “0 shown due to filters.”</td>
+      </tr>
+      <tr>
+        <th scope="row" class="added">Sorting a non-group column <span class="addtag">added</span><br><span class="eg">the real-table gap: sort by Status/Title scatters children away from their parent</span></th>
+        <td>Children drift away from their parent; relationship is lost on screen, and the ~3,000-row rebuild can drop keyboard focus.</td>
+        <td>Keep the child anchored to its parent (or its context row) so the group survives the sort; restore focus to the active control after the rebuild and announce the new order.</td>
+        <td>Sort within results; each orphan still carries “child of … — parent filtered out,” so the relationship survives the sort. Restore focus after rebuild.</td>
+      </tr>
+      <tr>
+        <th scope="row" class="added">Overall results announcement <span class="addtag">added</span></th>
+        <td>None — nothing says how many rows matched or how many parents were hidden.</td>
+        <td colspan="2"><span class="del">Live region (polite):</span> “Showing 7 of 11 projects” — and for Option B, “… 2 are child projects whose parent is filtered out.” (Built into Tables 1–6.)</td>
+      </tr>
+      <tr>
+        <th scope="row" class="added">No matches — empty result <span class="addtag">added</span></th>
+        <td>Often a blank table with no explanation.</td>
+        <td colspan="2">Explicit empty state: “No projects match these filters. Clear or change a filter to see results,” announced via the live region.</td>
+      </tr>
+      <tr>
+        <th scope="row">User expectation: “filters show only matches”</th>
+        <td>Meets the strict expectation — but that’s exactly what produces the silent orphan above.</td>
+        <td>Partly breaks it: non-matching parents appear, so they must be clearly marked context-only.</td>
+        <td>Fully meets it.</td>
+      </tr>
+      <tr>
+        <th scope="row">Recommended minimum messaging</th>
+        <td>Usually just “Parent project” / “Child of X,” with no word on whether related rows are hidden.</td>
+        <td>Add: (1) “Included for context” on non-matching parents; (2) “Has N children; showing M” on parents.</td>
+        <td>Add: (1) “Parent filtered out” on child rows; (2) “Has N children; showing M” on parents; (3) an action to reveal the parent.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
 </main>
